@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Work, Energy, and Power — Virtual Physics Lab</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    input[type="range"] {
+      accent-color: #2563eb;
+    }
+    .canvas-container {
+      touch-action: none;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900">
+
+  <!-- HEADER -->
+  <header class="sticky top-0 z-30 flex min-h-[60px] flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-2">
+    <div class="flex items-center gap-3">
+      <div class="flex h-11 w-12 items-center justify-center rounded-xl bg-amber-50 text-2xl">
+        🎢
+      </div>
+      <div>
+        <h1 class="text-xl font-bold text-slate-900">Work, Energy, and Power Lab</h1>
+        <p class="text-sm text-slate-500">
+          Class 9 / 11 NCERT Physics — Kinetic Energy, Potential Energy &amp; Conservation of Energy
+        </p>
+      </div>
+    </div>
+
+    <!-- MODE SWITCHER -->
+    <div class="flex flex-wrap items-center gap-2">
+      <div class="flex rounded-lg border border-slate-200 bg-slate-100 p-1">
+        <button
+          id="btnModeEnergy"
+          onclick="switchMode('energy')"
+          class="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition"
+        >
+          1. Conservation of Energy (Track)
+        </button>
+        <button
+          id="btnModeWork"
+          onclick="switchMode('work')"
+          class="rounded-md px-3 py-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 transition"
+        >
+          2. Work &amp; Power Simulator
+        </button>
+      </div>
+
+      <button
+        onclick="resetLab()"
+        class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50"
+      >
+        ↺ Reset
+      </button>
+    </div>
+  </header>
+
+  <!-- ===================================================================== -->
+  <!-- MODE 1: CONSERVATION OF MECHANICAL ENERGY (ROLLER COASTER TRACK)      -->
+  <!-- ===================================================================== -->
+  <div id="sectionEnergy">
+    <section class="border-b border-slate-200 bg-white">
+      <div class="flex flex-wrap items-center justify-between gap-3 px-5 pt-4">
+        <div>
+          <h2 class="font-bold text-blue-700">Conservation of Mechanical Energy (KE + PE = Constant)</h2>
+          <p class="text-xs text-slate-500">
+            Release the cart from height h₀ or drag it along the track to observe real-time KE, PE, and Thermal Energy transformation
+          </p>
+        </div>
+
+        <div class="flex flex-wrap gap-4 text-xs font-semibold">
+          <span class="flex items-center gap-2">
+            <span class="h-2.5 w-2.5 rounded-full bg-emerald-600"></span> Kinetic Energy (KE)
+          </span>
+          <span class="flex items-center gap-2">
+            <span class="h-2.5 w-2.5 rounded-full bg-blue-600"></span> Potential Energy (PE)
+          </span>
+          <span class="flex items-center gap-2">
+            <span class="h-2.5 w-2.5 rounded-full bg-orange-500"></span> Thermal Heat (Friction)
+          </span>
+          <span class="flex items-center gap-2">
+            <span class="h-2.5 w-2.5 rounded-full bg-purple-600"></span> Total Mechanical Energy
+          </span>
+        </div>
+      </div>
+
+      <div class="canvas-container relative overflow-x-auto px-2 py-2">
+        <canvas
+          id="energyCanvas"
+          width="1100"
+          height="390"
+          class="mx-auto block w-full max-w-[1100px] cursor-grab rounded-lg border border-slate-100 bg-slate-50/40"
+        ></canvas>
+      </div>
+
+      <!-- ANIMATION CONTROLS -->
+      <div class="mx-4 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+        <div class="flex items-center gap-2">
+          <button
+            id="btnPlayEnergy"
+            onclick="togglePlayEnergy()"
+            class="rounded-lg bg-blue-600 px-5 py-2 text-sm font-bold text-white hover:bg-blue-700"
+          >
+            Ⅱ Pause
+          </button>
+
+          <button
+            onclick="stepEnergy()"
+            class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-100"
+          >
+            Step +
+          </button>
+
+          <button
+            onclick="restartCart()"
+            class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-100"
+          >
+            ↺ Release from Top
+          </button>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <label class="text-xs font-semibold text-slate-600">Speed</label>
+          <select
+            id="selectSpeed"
+            class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+          >
+            <option value="0.5">0.5x (Slow-Mo)</option>
+            <option value="1" selected>1.0x</option>
+            <option value="1.5">1.5x</option>
+          </select>
+        </div>
+
+        <div class="text-xs font-semibold text-slate-600">
+          💡 Tip: Click &amp; drag the cart directly on the track to set any starting height!
+        </div>
+      </div>
+    </section>
+
+    <!-- DASHBOARD -->
+    <main class="grid grid-cols-1 gap-4 p-4 lg:grid-cols-3">
+      <!-- PARAMETERS -->
+      <section class="rounded-xl border border-slate-200 bg-white p-4">
+        <h2 class="mb-4 border-b border-slate-100 pb-3 text-lg font-bold">
+          🎚 System Parameters
+        </h2>
+
+        <!-- Mass Slider -->
+        <div class="mb-5">
+          <div class="mb-2 flex items-center justify-between">
+            <label class="text-sm font-semibold">Cart Mass (m)</label>
+            <span id="valMass" class="rounded-md bg-blue-50 px-2 py-1 text-xs font-bold text-blue-700">
+              2.0 kg
+            </span>
+          </div>
+          <input id="sliderMass" type="range" min="1" max="10" step="0.5" value="2" class="w-full" />
+          <div class="mt-1 flex justify-between text-xs text-slate-400">
+            <span>1.0 kg</span>
+            <span>10.0 kg</span>
+          </div>
+        </div>
+
+        <!-- Initial Height Slider -->
+        <div class="mb-5">
+          <div class="mb-2 flex items-center justify-between">
+            <label class="text-sm font-semibold">Release Height (h₀)</label>
+            <span id="valStartH" class="rounded-md bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700">
+              8.0 m
+            </span>
+          </div>
+          <input id="sliderStartH" type="range" min="1" max="10" step="0.5" value="8" class="w-full" />
+          <div class="mt-1 flex justify-between text-xs text-slate-400">
+            <span>1.0 m</span>
+            <span>10.0 m</span>
+          </div>
+        </div>
+
+        <!-- Gravity Slider -->
+        <div class="mb-5">
+          <div class="mb-2 flex items-center justify-between">
+            <label class="text-sm font-semibold">Gravity (g)</label>
+            <span id="valGravity" class="rounded-md bg-purple-50 px-2 py-1 text-xs font-bold text-purple-700">
+              9.8 m/s²
+            </span>
+          </div>
+          <input id="sliderGravity" type="range" min="1.6" max="20" step="0.2" value="9.8" class="w-full" />
+          <div class="mt-1 flex justify-between text-xs text-slate-400">
+            <span>1.6 m/s² (Moon)</span>
+            <span>20 m/s²</span>
+          </div>
+        </div>
+
+        <!-- Friction Slider -->
+        <div class="mb-4">
+          <div class="mb-2 flex items-center justify-between">
+            <label class="text-sm font-semibold">Track Friction Coefficient (μ)</label>
+            <span id="valFriction" class="rounded-md bg-orange-50 px-2 py-1 text-xs font-bold text-orange-700">
+              0.00 (Ideal)
+            </span>
+          </div>
+          <input id="sliderFriction" type="range" min="0" max="0.25" step="0.01" value="0" class="w-full" />
+          <div class="mt-1 flex justify-between text-xs text-slate-400">
+            <span>0.00 (Frictionless)</span>
+            <span>0.25 (High Friction)</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- LIVE READINGS -->
+      <section class="rounded-xl border border-slate-200 bg-white p-4">
+        <h2 class="mb-4 border-b border-slate-100 pb-3 text-lg font-bold">
+          ✨ Live Energy &amp; Speed Breakdown
+        </h2>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <p class="text-[10px] font-bold tracking-wide text-slate-500">KINETIC ENERGY (KE)</p>
+            <p id="cardKE" class="mt-2 text-2xl font-bold text-emerald-600">0.0</p>
+            <p class="text-xs font-semibold text-slate-600">Joules (J)</p>
+            <p class="mt-2 text-[10px] text-slate-500">KE = ½ mv²</p>
+          </div>
+
+          <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <p class="text-[10px] font-bold tracking-wide text-slate-500">POTENTIAL ENERGY (PE)</p>
+            <p id="cardPE" class="mt-2 text-2xl font-bold text-blue-600">156.8</p>
+            <p class="text-xs font-semibold text-slate-600">Joules (J)</p>
+            <p class="mt-2 text-[10px] text-slate-500">PE = mgh</p>
+          </div>
+
+          <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <p class="text-[10px] font-bold tracking-wide text-slate-500">THERMAL LOSS (Q)</p>
+            <p id="cardThermal" class="mt-2 text-2xl font-bold text-orange-600">0.0</p>
+            <p class="text-xs font-semibold text-slate-600">Joules (J)</p>
+            <p class="mt-2 text-[10px] text-slate-500">Work done by friction</p>
+          </div>
+
+          <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <p class="text-[10px] font-bold tracking-wide text-slate-500">INSTANTANEOUS SPEED</p>
+            <p id="cardSpeed" class="mt-2 text-2xl font-bold text-purple-600">0.00</p>
+            <p class="text-xs font-semibold text-slate-600">m/s</p>
+            <p id="cardCurrH" class="mt-2 text-[10px] text-slate-500">Height: 8.00 m</p>
+          </div>
+        </div>
+
+        <div class="mt-4 rounded-lg bg-emerald-50 p-3 text-xs leading-5 text-emerald-900">
+          <strong>Law of Conservation of Energy:</strong> Energy can neither be created nor destroyed; it only transforms from one form to another ($KE + PE + E_{\text{thermal}} = E_{\text{initial}}$).
+        </div>
+      </section>
+
+      <!-- LIVE EQUATIONS -->
+      <section class="rounded-xl border border-slate-200 bg-white p-4">
+        <div class="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
+          <h2 class="text-lg font-bold">🧮 Live Physics Equations</h2>
+          <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+            Energy Formulas
+          </span>
+        </div>
+
+        <div class="space-y-3 text-sm">
+          <div>
+            <h3 class="mb-1 font-bold">1. Initial Total Energy ($E_0 = mgh_0$)</h3>
+            <div class="rounded-lg bg-slate-50 p-2.5 font-mono text-xs leading-5">
+              <p id="derivE0">= 2.0 × 9.8 × 8.0 = 156.80 J</p>
+            </div>
+          </div>
+
+          <div>
+            <h3 class="mb-1 font-bold">2. Current Potential Energy ($PE = mgh$)</h3>
+            <div class="rounded-lg bg-slate-50 p-2.5 font-mono text-xs leading-5">
+              <p id="derivPE">= 2.0 × 9.8 × 8.00 = 156.80 J</p>
+            </div>
+          </div>
+
+          <div>
+            <h3 class="mb-1 font-bold">3. Current Kinetic Energy ($KE = \frac{1}{2}mv^2$)</h3>
+            <div class="rounded-lg bg-slate-50 p-2.5 font-mono text-xs leading-5">
+              <p id="derivKE">= 0.5 × 2.0 × (0.00)² = 0.00 J</p>
+            </div>
+          </div>
+
+          <div>
+            <h3 class="mb-1 font-bold">4. Max Bottom Speed ($v_{\max} = \sqrt{2gh_0}$)</h3>
+            <div class="rounded-lg border border-blue-100 bg-blue-50 p-2.5 font-mono text-xs leading-5 text-blue-900">
+              <p id="derivVMax">= √(2 × 9.8 × 8.0) = 12.52 m/s (if μ = 0)</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODE 2: WORK, FORCE, AND POWER SIMULATOR (INCLINED RAMP & BLOCK)       -->
+  <!-- ===================================================================== -->
+  <div id="sectionWork" class="hidden">
+    <section class="border-b border-slate-200 bg-white">
+      <div class="flex flex-wrap items-center justify-between gap-3 px-5 pt-4">
+        <div>
+          <h2 class="font-bold text-blue-700">Mechanical Work, Power &amp; Work-Energy Theorem</h2>
+          <p class="text-xs text-slate-500">
+            Apply a pulling force at angle θ over displacement d to measure Work (W = F·d·cosθ) and Power (P = W/t)
+          </p>
+        </div>
+
+        <div class="flex flex-wrap gap-4 text-xs font-semibold">
+          <span class="flex items-center gap-2">
+            <span class="h-2.5 w-2.5 rounded-full bg-orange-500"></span> Applied Force (F)
+          </span>
+          <span class="flex items-center gap-2">
+            <span class="h-2.5 w-2.5 rounded-full bg-emerald-600"></span> Effective Component (F cosθ)
+          </span>
+          <span class="flex items-center gap-2">
+            <span class="h-2.5 w-2.5 rounded-full bg-blue-600"></span> Displacement (d)
+          </span>
+        </div>
+      </div>
+
+      <div class="relative overflow-x-auto px-2 py-2">
+        <canvas
+          id="workCanvas"
+          width="1100"
+          height="360"
+          class="mx-auto block w-full max-w-[1100px] rounded-lg border border-slate-100 bg-slate-50/40"
+        ></canvas>
+      </div>
+
+      <div class="mx-4 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+        <button
+          onclick="runWorkPush()"
+          class="rounded-lg bg-blue-600 px-5 py-2 text-sm font-bold text-white hover:bg-blue-700"
+        >
+          ▶ Apply Force &amp; Push Block
+        </button>
+
+        <div class="text-xs font-semibold text-slate-600">
+          Note: When θ = 90° (force perpendicular to displacement), <span class="text-red-600">Work Done = 0 J</span> (cos 90° = 0)
+        </div>
+      </div>
+    </section>
+
+    <main class="grid grid-cols-1 gap-4 p-4 lg:grid-cols-3">
+      <!-- CONTROLS -->
+      <section class="rounded-xl border border-slate-200 bg-white p-4">
+        <h2 class="mb-4 border-b border-slate-100 pb-3 text-lg font-bold">
+          🎚 Force &amp; Displacement Controls
+        </h2>
+
+        <div class="mb-4">
+          <div class="mb-1 flex justify-between text-sm font-semibold">
+            <span>Applied Force (F)</span>
+            <span id="valWorkForce" class="rounded bg-orange-50 px-2 py-0.5 text-xs font-bold text-orange-700">50 N</span>
+          </div>
+          <input id="sliderWorkForce" type="range" min="10" max="150" step="5" value="50" class="w-full" />
+        </div>
+
+        <div class="mb-4">
+          <div class="mb-1 flex justify-between text-sm font-semibold">
+            <span>Force Angle (θ)</span>
+            <span id="valWorkAngle" class="rounded bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-700">30°</span>
+          </div>
+          <input id="sliderWorkAngle" type="range" min="0" max="180" step="5" value="30" class="w-full" />
+        </div>
+
+        <div class="mb-4">
+          <div class="mb-1 flex justify-between text-sm font-semibold">
+            <span>Displacement (d)</span>
+            <span id="valWorkDist" class="rounded bg-blue-50 px-2 py-0.5 text-xs font-bold text-blue-700">10 m</span>
+          </div>
+          <input id="sliderWorkDist" type="range" min="2" max="20" step="1" value="10" class="w-full" />
+        </div>
+
+        <div class="mb-2">
+          <div class="mb-1 flex justify-between text-sm font-semibold">
+            <span>Time Taken (t)</span>
+            <span id="valWorkTime" class="rounded bg-purple-50 px-2 py-0.5 text-xs font-bold text-purple-700">4.0 s</span>
+          </div>
+          <input id="sliderWorkTime" type="range" min="1" max="15" step="0.5" value="4" class="w-full" />
+        </div>
+      </section>
+
+      <!-- CARDS -->
+      <section class="rounded-xl border border-slate-200 bg-white p-4">
+        <h2 class="mb-4 border-b border-slate-100 pb-3 text-lg font-bold">
+          ✨ Work, Power &amp; Final Speed
+        </h2>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <p class="text-[10px] font-bold text-slate-500">WORK DONE (W)</p>
+            <p id="cardWorkDone" class="mt-2 text-2xl font-bold text-blue-600">433.0</p>
+            <p class="text-xs font-semibold text-slate-600">Joules (J)</p>
+            <p id="cardWorkType" class="mt-1 text-[10px] font-bold text-emerald-600">Positive Work</p>
+          </div>
+
+          <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <p class="text-[10px] font-bold text-slate-500">AVERAGE POWER (P)</p>
+            <p id="cardPower" class="mt-2 text-2xl font-bold text-purple-600">108.3</p>
+            <p class="text-xs font-semibold text-slate-600">Watts (J/s)</p>
+            <p id="cardHorsepower" class="mt-1 text-[10px] text-slate-500">0.15 HP</p>
+          </div>
+
+          <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <p class="text-[10px] font-bold text-slate-500">EFFECTIVE FORCE</p>
+            <p id="cardEffForce" class="mt-2 text-2xl font-bold text-emerald-600">43.3</p>
+            <p class="text-xs font-semibold text-slate-600">Newtons (F cosθ)</p>
+            <p class="mt-1 text-[10px] text-slate-500">Along displacement</p>
+          </div>
+
+          <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <p class="text-[10px] font-bold text-slate-500">FINAL SPEED (m = 5 kg)</p>
+            <p id="cardWorkSpeed" class="mt-2 text-2xl font-bold text-orange-600">13.16</p>
+            <p class="text-xs font-semibold text-slate-600">m/s</p>
+            <p class="mt-1 text-[10px] text-slate-500">Via W = ΔKE = ½mv²</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- DERIVATION -->
+      <section class="rounded-xl border border-slate-200 bg-white p-4">
+        <h2 class="mb-4 border-b border-slate-100 pb-3 text-lg font-bold">
+          🧮 Live Step-by-Step Calculation
+        </h2>
+
+        <div class="space-y-3 font-mono text-xs">
+          <div class="rounded-lg bg-slate-50 p-3 leading-6">
+            <p class="font-bold text-slate-700">1. Mechanical Work Formula:</p>
+            <p>W = F · d · cos(θ)</p>
+            <p id="derivWorkLine1">= 50 × 10 × cos(30°)</p>
+            <p id="derivWorkRes" class="font-bold text-blue-700">= 433.01 Joules</p>
+          </div>
+
+          <div class="rounded-lg bg-slate-50 p-3 leading-6">
+            <p class="font-bold text-slate-700">2. Mechanical Power Formula:</p>
+            <p>P = W / t</p>
+            <p id="derivPowerLine1">= 433.01 / 4.0</p>
+            <p id="derivPowerRes" class="font-bold text-purple-700">= 108.25 Watts</p>
+          </div>
+
+          <div class="rounded-lg border border-emerald-100 bg-emerald-50 p-3 font-sans text-xs leading-5 text-emerald-900">
+            <strong>Sign of Work:</strong><br />
+            • $0^\circ \le \theta < 90^\circ$: <strong>Positive Work</strong> (speeds object up)<br />
+            • $\theta = 90^\circ$: <strong>Zero Work</strong> (e.g., centripetal force)<br />
+            • $90^\circ < \theta \le 180^\circ$: <strong>Negative Work</strong> (opposes motion, e.g., friction)
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-slate-200 bg-white px-4 py-4 text-center text-xs text-slate-500">
+    Work, Energy, and Power Virtual Lab | Kinetic Energy (½mv²) | Potential Energy (mgh) | Power (W/t)
+  </footer>
+
+  <!-- ===================================================================== -->
+  <!-- JAVASCRIPT PHYSICS ENGINE                                             -->
+  <!-- ===================================================================== -->
+  <script>
+    let activeMode = "energy";
+
+    function switchMode(mode) {
+      activeMode = mode;
+      const eSec = document.getElementById("sectionEnergy");
+      const wSec = document.getElementById("sectionWork");
+      const btnE = document.getElementById("btnModeEnergy");
+      const btnW = document.getElementById("btnModeWork");
+
+      if (mode === "energy") {
+        eSec.classList.remove("hidden");
+        wSec.classList.add("hidden");
+        btnE.className = "rounded-md bg-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition";
+        btnW.className = "rounded-md px-3 py-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 transition";
+      } else {
+        eSec.classList.add("hidden");
+        wSec.classList.remove("hidden");
+        btnW.className = "rounded-md bg-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition";
+        btnE.className = "rounded-md px-3 py-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 transition";
+        updateWorkCalculations();
+      }
+    }
+
+    // =========================================================================
+    // SIMULATION 1: CONSERVATION OF MECHANICAL ENERGY (TRACK)
+    // =========================================================================
+    const eCanvas = document.getElementById("energyCanvas");
+    const eCtx = eCanvas.getContext("2d");
+
+    const energyState = {
+      mass: 2.0,
+      startH: 8.0,
+      gravity: 9.8,
+      friction: 0.0,
+      // Track horizontal coordinate x in meters [0 .. 24]
+      x: 2.0,
+      vx: 0.0,
+      thermalEnergy: 0.0,
+      totalInitialEnergy: 0.0,
+      isPlaying: true,
+      speedMult: 1.0,
+      draggingCart: false,
+    };
+
+    // Track height profile h(x) in meters for x in [0, 24]
+    // Left hill (h=10 at x=0), Valley bottom (h=0 at x=12), Right hill (h=10 at x=24)
+    function trackHeight(x) {
+      const dx = (x - 12) / 12;
+      return 10 * dx * dx;
+    }
+
+    // Slope dh/dx
+    function trackSlope(x) {
+      return (20 * (x - 12)) / 144;
+    }
+
+    // Find x on left side for a given startH
+    function xFromHeightLeft(h) {
+      const clampedH = Math.max(0, Math.min(10, h));
+      return 12 - 12 * Math.sqrt(clampedH / 10);
+    }
+
+    function initCartFromStartH() {
+      energyState.x = xFromHeightLeft(energyState.startH);
+      energyState.vx = 0;
+      energyState.thermalEnergy = 0;
+      energyState.totalInitialEnergy =
+        energyState.mass * energyState.gravity * energyState.startH;
+    }
+
+    initCartFromStartH();
+
+    document.getElementById("sliderMass").addEventListener("input", (e) => {
+      energyState.mass = parseFloat(e.target.value);
+      document.getElementById("valMass").textContent = `${energyState.mass.toFixed(1)} kg`;
+      initCartFromStartH();
+    });
+
+    document.getElementById("sliderStartH").addEventListener("input", (e) => {
+      energyState.startH = parseFloat(e.target.value);
+      document.getElementById("valStartH").textContent = `${energyState.startH.toFixed(1)} m`;
+      initCartFromStartH();
+    });
+
+    document.getElementById("sliderGravity").addEventListener("input", (e) => {
+      energyState.gravity = parseFloat(e.target.value);
+      document.getElementById("valGravity").textContent = `${energyState.gravity.toFixed(1)} m/s²`;
+      initCartFromStartH();
+    });
+
+    document.getElementById("sliderFriction").addEventListener("input", (e) => {
+      energyState.friction = parseFloat(e.target.value);
+      document.getElementById("valFriction").textContent =
+        energyState.friction === 0
+          ? "0.00 (Ideal)"
+          : energyState.friction.toFixed(2);
+      initCartFromStartH();
+    });
+
+    document.getElementById("selectSpeed").addEventListener("change", (e) => {
+      energyState.speedMult = parseFloat(e.target.value);
+    });
+
+    function togglePlayEnergy() {
+      energyState.isPlaying = !energyState.isPlaying;
+      document.getElementById("btnPlayEnergy").textContent = energyState.isPlaying
+        ? "Ⅱ Pause"
+        : "▶ Play";
+    }
+
+    function restartCart() {
+      initCartFromStartH();
+      energyState.isPlaying = true;
+      document.getElementById("btnPlayEnergy").textContent = "Ⅱ Pause";
+    }
+
+    function stepEnergy() {
+      energyState.isPlaying = false;
+      document.getElementById("btnPlayEnergy").textContent = "▶ Play";
+      stepEnergyPhysics(0.05);
+    }
+
+    // Coordinate mapping for track canvas (left side x: 260..1040, y: 60..330)
+    const trackLeftPx = 270;
+    const trackWidthPx = 760;
+    const groundYPx = 330;
+    const maxHeightPx = 260; // corresponds to 10 m
+
+    function toCanvasX(metersX) {
+      return trackLeftPx + (metersX / 24) * trackWidthPx;
+    }
+
+    function toCanvasY(metersH) {
+      return groundYPx - (metersH / 10) * maxHeightPx;
+    }
+
+    function fromCanvasX(px) {
+      return Math.max(0, Math.min(24, ((px - trackLeftPx) / trackWidthPx) * 24));
+    }
+
+    // Drag cart along track
+    eCanvas.addEventListener("pointerdown", (e) => {
+      const rect = eCanvas.getBoundingClientRect();
+      const scaleX = eCanvas.width / rect.width;
+      const scaleY = eCanvas.height / rect.height;
+      const cx = (e.clientX - rect.left) * scaleX;
+      const cy = (e.clientY - rect.top) * scaleY;
+
+      const cartPxX = toCanvasX(energyState.x);
+      const cartPxY = toCanvasY(trackHeight(energyState.x));
+      if (Math.hypot(cx - cartPxX, cy - cartPxY) < 40) {
+        energyState.draggingCart = true;
+        eCanvas.style.cursor = "grabbing";
+      }
+    });
+
+    window.addEventListener("pointermove", (e) => {
+      if (!energyState.draggingCart) return;
+      const rect = eCanvas.getBoundingClientRect();
+      const scaleX = eCanvas.width / rect.width;
+      const cx = (e.clientX - rect.left) * scaleX;
+      const newX = fromCanvasX(cx);
+      const newH = trackHeight(newX);
+
+      energyState.x = newX;
+      energyState.startH = Math.max(0.5, Math.round(newH * 10) / 10);
+      energyState.vx = 0;
+      energyState.thermalEnergy = 0;
+      energyState.totalInitialEnergy =
+        energyState.mass * energyState.gravity * energyState.startH;
+
+      document.getElementById("sliderStartH").value = energyState.startH;
+      document.getElementById("valStartH").textContent = `${energyState.startH.toFixed(1)} m`;
+    });
+
+    window.addEventListener("pointerup", () => {
+      energyState.draggingCart = false;
+      eCanvas.style.cursor = "grab";
+    });
+
+    function stepEnergyPhysics(dt) {
+      if (energyState.draggingCart) return;
+      const { mass, gravity, friction } = energyState;
+
+      // Sub-step integration for high energy conservation accuracy
+      const subSteps = 8;
+      const subDt = dt / subSteps;
+
+      for (let s = 0; s < subSteps; s++) {
+        const slope = trackSlope(energyState.x);
+        const theta = Math.atan(slope);
+        const sinT = Math.sin(theta);
+        const cosT = Math.cos(theta);
+
+        // Tangential acceleration along track
+        let aTangential = -gravity * sinT;
+
+        // Kinetic friction opposes velocity direction
+        if (friction > 0 && Math.abs(energyState.vx) > 0.001) {
+          const dir = Math.sign(energyState.vx);
+          aTangential -= dir * friction * gravity * cosT;
+        }
+
+        // Convert tangential velocity to horizontal vx
+        const vTangent = energyState.vx / cosT + aTangential * subDt;
+        const ds = Math.abs(vTangent * subDt);
+
+        // Accumulate thermal dissipation from friction
+        if (friction > 0) {
+          const fFriction = friction * mass * gravity * cosT;
+          energyState.thermalEnergy += fFriction * ds;
+        }
+
+        energyState.vx = vTangent * cosT;
+        energyState.x += energyState.vx * subDt;
+
+        // Clamp within [0, 24]
+        if (energyState.x <= 0) {
+          energyState.x = 0;
+          energyState.vx = Math.abs(energyState.vx);
+        } else if (energyState.x >= 24) {
+          energyState.x = 24;
+          energyState.vx = -Math.abs(energyState.vx);
+        }
+
+        // Enforce strict energy conservation cap so numerical drift never occurs
+        const currH = trackHeight(energyState.x);
+        const pe = mass * gravity * currH;
+        const maxAllowedE = energyState.totalInitialEnergy;
+        if (energyState.thermalEnergy > maxAllowedE - pe) {
+          energyState.thermalEnergy = Math.max(0, maxAllowedE - pe);
+        }
+        const exactKE = Math.max(0, maxAllowedE - pe - energyState.thermalEnergy);
+        const exactSpeed = Math.sqrt((2 * exactKE) / mass);
+        energyState.vx = Math.sign(energyState.vx || 1) * exactSpeed * cosT;
+
+        if (exactKE < 0.01 && Math.abs(slope) < friction) {
+          energyState.vx = 0;
+        }
+      }
+    }
+
+    function renderEnergyCanvas() {
+      eCtx.clearRect(0, 0, eCanvas.width, eCanvas.height);
+
+      const { mass, gravity, startH, x, thermalEnergy, totalInitialEnergy } = energyState;
+      const currH = trackHeight(x);
+      const pe = mass * gravity * currH;
+      const ke = Math.max(0, totalInitialEnergy - pe - thermalEnergy);
+      const speed = Math.sqrt((2 * ke) / mass);
+
+      // Update UI Readouts
+      document.getElementById("cardKE").textContent = ke.toFixed(1);
+      document.getElementById("cardPE").textContent = pe.toFixed(1);
+      document.getElementById("cardThermal").textContent = thermalEnergy.toFixed(1);
+      document.getElementById("cardSpeed").textContent = speed.toFixed(2);
+      document.getElementById("cardCurrH").textContent = `Height: ${currH.toFixed(2)} m`;
+
+      document.getElementById("derivE0").textContent =
+        `= ${mass.toFixed(1)} × ${gravity.toFixed(1)} × ${startH.toFixed(1)} = ${totalInitialEnergy.toFixed(2)} J`;
+      document.getElementById("derivPE").textContent =
+        `= ${mass.toFixed(1)} × ${gravity.toFixed(1)} × ${currH.toFixed(2)} = ${pe.toFixed(2)} J`;
+      document.getElementById("derivKE").textContent =
+        `= 0.5 × ${mass.toFixed(1)} × (${speed.toFixed(2)})² = ${ke.toFixed(2)} J`;
+      const vMax = Math.sqrt(2 * gravity * startH);
+      document.getElementById("derivVMax").textContent =
+        `= √(2 × ${gravity.toFixed(1)} × ${startH.toFixed(1)}) = ${vMax.toFixed(2)} m/s (if μ = 0)`;
+
+      // 1. LIVE ENERGY BAR CHART PANEL (Left side x: 25..225)
+      eCtx.fillStyle = "#ffffff";
+      eCtx.strokeStyle = "#cbd5e1";
+      eCtx.lineWidth = 1.5;
+      eCtx.beginPath();
+      eCtx.roundRect(22, 25, 210, 330, 12);
+      eCtx.fill();
+      eCtx.stroke();
+
+      eCtx.fillStyle = "#1e293b";
+      eCtx.font = "bold 13px sans-serif";
+      eCtx.textAlign = "center";
+      eCtx.fillText("LIVE ENERGY BARS", 127, 48);
+
+      const maxScaleE = Math.max(totalInitialEnergy, 10);
+      const barBaseY = 315;
+      const maxBarH = 230;
+
+      const bars = [
+        { label: "KE", val: ke, color: "#059669", bx: 42 },
+        { label: "PE", val: pe, color: "#2563eb", bx: 88 },
+        { label: "Heat", val: thermalEnergy, color: "#ea580c", bx: 134 },
+        { label: "Total", val: totalInitialEnergy, color: "#7c3aed", bx: 180 },
+      ];
+
+      bars.forEach((b) => {
+        const bh = Math.min(maxBarH, (b.val / maxScaleE) * maxBarH);
+        eCtx.fillStyle = "#f1f5f9";
+        eCtx.fillRect(b.bx, barBaseY - maxBarH, 28, maxBarH);
+
+        eCtx.fillStyle = b.color;
+        eCtx.fillRect(b.bx, barBaseY - bh, 28, bh);
+
+        eCtx.fillStyle = "#334155";
+        eCtx.font = "bold 11px sans-serif";
+        eCtx.fillText(b.label, b.bx + 14, barBaseY + 18);
+      });
+
+      // 2. HEIGHT REFERENCE GRID LINES
+      for (let h = 0; h <= 10; h += 2) {
+        const py = toCanvasY(h);
+        eCtx.strokeStyle = h === 0 ? "#64748b" : "#e2e8f0";
+        eCtx.lineWidth = h === 0 ? 2 : 1;
+        eCtx.setLineDash(h === 0 ? [] : [4, 4]);
+        eCtx.beginPath();
+        eCtx.moveTo(trackLeftPx - 10, py);
+        eCtx.lineTo(trackLeftPx + trackWidthPx + 10, py);
+        eCtx.stroke();
+
+        eCtx.fillStyle = "#64748b";
+        eCtx.font = "11px sans-serif";
+        eCtx.textAlign = "right";
+        eCtx.fillText(`${h}m`, trackLeftPx - 15, py + 4);
+      }
+      eCtx.setLineDash([]);
+
+      // Release Height Dashed Reference Line
+      const startPy = toCanvasY(startH);
+      eCtx.strokeStyle = "#9333ea";
+      eCtx.setLineDash([6, 4]);
+      eCtx.beginPath();
+      eCtx.moveTo(trackLeftPx, startPy);
+      eCtx.lineTo(trackLeftPx + trackWidthPx, startPy);
+      eCtx.stroke();
+      eCtx.setLineDash([]);
+      eCtx.fillStyle = "#7c3aed";
+      eCtx.font = "bold 11px sans-serif";
+      eCtx.textAlign = "left";
+      eCtx.fillText(`Initial Release Level (h₀ = ${startH.toFixed(1)} m)`, trackLeftPx + 10, startPy - 6);
+
+      // 3. PARABOLIC ROLLER COASTER TRACK
+      eCtx.strokeStyle = "#334155";
+      eCtx.lineWidth = 6;
+      eCtx.beginPath();
+      for (let mx = 0; mx <= 24; mx += 0.25) {
+        const px = toCanvasX(mx);
+        const py = toCanvasY(trackHeight(mx));
+        if (mx === 0) eCtx.moveTo(px, py);
+        else eCtx.lineTo(px, py);
+      }
+      eCtx.stroke();
+
+      // 4. CART ON TRACK
+      const cartX = toCanvasX(x);
+      const cartY = toCanvasY(currH);
+      const slopeAngle = -Math.atan(trackSlope(x) * (maxHeightPx / 10) / (trackWidthPx / 24));
+
+      eCtx.save();
+      eCtx.translate(cartX, cartY);
+      eCtx.rotate(slopeAngle);
+
+      // Cart body
+      eCtx.fillStyle = "#2563eb";
+      eCtx.strokeStyle = "#ffffff";
+      eCtx.lineWidth = 2;
+      eCtx.beginPath();
+      eCtx.roundRect(-20, -24, 40, 18, 6);
+      eCtx.fill();
+      eCtx.stroke();
+
+      // Wheels
+      eCtx.fillStyle = "#0f172a";
+      eCtx.beginPath();
+      eCtx.arc(-11, -5, 5, 0, Math.PI * 2);
+      eCtx.arc(11, -5, 5, 0, Math.PI * 2);
+      eCtx.fill();
+      eCtx.restore();
+
+      // Speed badge above cart
+      eCtx.fillStyle = "#0f172a";
+      eCtx.font = "bold 12px sans-serif";
+      eCtx.textAlign = "center";
+      eCtx.fillText(`v = ${speed.toFixed(1)} m/s`, cartX, cartY - 34);
+    }
+
+    // =========================================================================
+    // SIMULATION 2: WORK & POWER RAMP SIMULATOR
+    // =========================================================================
+    const wCanvas = document.getElementById("workCanvas");
+    const wCtx = wCanvas.getContext("2d");
+
+    const workState = {
+      force: 50,
+      angle: 30,
+      distance: 10,
+      time: 4.0,
+      animProgress: 0,
+      animating: false,
+    };
+
+    ["sliderWorkForce", "sliderWorkAngle", "sliderWorkDist", "sliderWorkTime"].forEach((id) => {
+      document.getElementById(id).addEventListener("input", () => {
+        workState.force = parseFloat(document.getElementById("sliderWorkForce").value);
+        workState.angle = parseFloat(document.getElementById("sliderWorkAngle").value);
+        workState.distance = parseFloat(document.getElementById("sliderWorkDist").value);
+        workState.time = parseFloat(document.getElementById("sliderWorkTime").value);
+        updateWorkCalculations();
+      });
+    });
+
+    function runWorkPush() {
+      workState.animProgress = 0;
+      workState.animating = true;
+    }
+
+    function updateWorkCalculations() {
+      const { force, angle, distance, time } = workState;
+      const rad = (angle * Math.PI) / 180;
+      const effForce = force * Math.cos(rad);
+      const work = effForce * distance;
+      const power = work / time;
+      const hp = power / 746;
+      const mass = 5.0;
+      const finalSpeed = work > 0 ? Math.sqrt((2 * work) / mass) : 0;
+
+      document.getElementById("valWorkForce").textContent = `${force} N`;
+      document.getElementById("valWorkAngle").textContent = `${angle}°`;
+      document.getElementById("valWorkDist").textContent = `${distance} m`;
+      document.getElementById("valWorkTime").textContent = `${time.toFixed(1)} s`;
+
+      document.getElementById("cardWorkDone").textContent = work.toFixed(1);
+      document.getElementById("cardPower").textContent = power.toFixed(1);
+      document.getElementById("cardHorsepower").textContent = `${hp.toFixed(2)} HP`;
+      document.getElementById("cardEffForce").textContent = effForce.toFixed(1);
+      document.getElementById("cardWorkSpeed").textContent = finalSpeed.toFixed(2);
+
+      const typeEl = document.getElementById("cardWorkType");
+      if (Math.abs(work) < 0.05) {
+        typeEl.textContent = "Zero Work (θ = 90°)";
+        typeEl.className = "mt-1 text-[10px] font-bold text-slate-500";
+      } else if (work > 0) {
+        typeEl.textContent = "Positive Work";
+        typeEl.className = "mt-1 text-[10px] font-bold text-emerald-600";
+      } else {
+        typeEl.textContent = "Negative Work";
+        typeEl.className = "mt-1 text-[10px] font-bold text-red-600";
+      }
+
+      document.getElementById("derivWorkLine1").textContent =
+        `= ${force} × ${distance} × cos(${angle}°)`;
+      document.getElementById("derivWorkRes").textContent =
+        `= ${work.toFixed(2)} Joules`;
+      document.getElementById("derivPowerLine1").textContent =
+        `= ${work.toFixed(2)} / ${time.toFixed(1)}`;
+      document.getElementById("derivPowerRes").textContent =
+        `= ${power.toFixed(2)} Watts`;
+    }
+
+    function renderWorkCanvas(dt) {
+      wCtx.clearRect(0, 0, wCanvas.width, wCanvas.height);
+
+      if (workState.animating) {
+        workState.animProgress += dt / Math.max(workState.time * 0.4, 0.8);
+        if (workState.animProgress >= 1) {
+          workState.animProgress = 1;
+          workState.animating = false;
+        }
+      }
+
+      const startX = 160;
+      const groundY = 270;
+      const pxPerMeter = 38;
+      const totalPx = workState.distance * pxPerMeter;
+      const currentPx = totalPx * workState.animProgress;
+      const blockX = startX + currentPx;
+
+      // Ground
+      wCtx.fillStyle = "#e2e8f0";
+      wCtx.fillRect(60, groundY, 980, 45);
+      wCtx.strokeStyle = "#64748b";
+      wCtx.lineWidth = 2;
+      wCtx.beginPath();
+      wCtx.moveTo(60, groundY);
+      wCtx.lineTo(1040, groundY);
+      wCtx.stroke();
+
+      // Ghost Start Box
+      wCtx.strokeStyle = "#94a3b8";
+      wCtx.setLineDash([5, 5]);
+      wCtx.strokeRect(startX - 35, groundY - 60, 70, 60);
+      wCtx.setLineDash([]);
+
+      // Displacement Arrow
+      wCtx.strokeStyle = "#2563eb";
+      wCtx.lineWidth = 3;
+      wCtx.beginPath();
+      wCtx.moveTo(startX, groundY + 22);
+      wCtx.lineTo(startX + totalPx, groundY + 22);
+      wCtx.stroke();
+
+      wCtx.fillStyle = "#1d4ed8";
+      wCtx.font = "bold 13px sans-serif";
+      wCtx.textAlign = "center";
+      wCtx.fillText(`Displacement d = ${workState.distance} m`, startX + totalPx / 2, groundY + 40);
+
+      // Active Block (5 kg)
+      wCtx.fillStyle = "#3b82f6";
+      wCtx.strokeStyle = "#1e3a8a";
+      wCtx.lineWidth = 2;
+      wCtx.fillRect(blockX - 35, groundY - 60, 70, 60);
+      wCtx.strokeRect(blockX - 35, groundY - 60, 70, 60);
+
+      wCtx.fillStyle = "#ffffff";
+      wCtx.font = "bold 13px sans-serif";
+      wCtx.fillText("5 kg", blockX, groundY - 25);
+
+      // Force Vector Arrow
+      const rad = (workState.angle * Math.PI) / 180;
+      const vecLen = 60 + (workState.force / 150) * 80;
+      const endX = blockX + Math.cos(rad) * vecLen;
+      const endY = groundY - 30 - Math.sin(rad) * vecLen;
+
+      // Effective Horizontal Component F cos(theta)
+      wCtx.strokeStyle = "#059669";
+      wCtx.setLineDash([4, 4]);
+      wCtx.lineWidth = 2.5;
+      wCtx.beginPath();
+      wCtx.moveTo(blockX, groundY - 30);
+      wCtx.lineTo(endX, groundY - 30);
+      wCtx.stroke();
+      wCtx.setLineDash([]);
+
+      // Applied Force F
+      wCtx.strokeStyle = "#ea580c";
+      wCtx.lineWidth = 4;
+      wCtx.beginPath();
+      wCtx.moveTo(blockX, groundY - 30);
+      wCtx.lineTo(endX, endY);
+      wCtx.stroke();
+
+      // Arrowhead on Force
+      wCtx.fillStyle = "#ea580c";
+      wCtx.beginPath();
+      wCtx.arc(endX, endY, 5, 0, Math.PI * 2);
+      wCtx.fill();
+
+      wCtx.fillStyle = "#c2410c";
+      wCtx.font = "bold 13px sans-serif";
+      wCtx.fillText(`F = ${workState.force} N (θ = ${workState.angle}°)`, endX, endY - 12);
+    }
+
+    function resetLab() {
+      energyState.mass = 2.0;
+      energyState.startH = 8.0;
+      energyState.gravity = 9.8;
+      energyState.friction = 0.0;
+      document.getElementById("sliderMass").value = 2;
+      document.getElementById("sliderStartH").value = 8;
+      document.getElementById("sliderGravity").value = 9.8;
+      document.getElementById("sliderFriction").value = 0;
+      document.getElementById("valMass").textContent = "2.0 kg";
+      document.getElementById("valStartH").textContent = "8.0 m";
+      document.getElementById("valGravity").textContent = "9.8 m/s²";
+      document.getElementById("valFriction").textContent = "0.00 (Ideal)";
+      restartCart();
+
+      workState.force = 50;
+      workState.angle = 30;
+      workState.distance = 10;
+      workState.time = 4.0;
+      workState.animProgress = 0;
+      workState.animating = false;
+      document.getElementById("sliderWorkForce").value = 50;
+      document.getElementById("sliderWorkAngle").value = 30;
+      document.getElementById("sliderWorkDist").value = 10;
+      document.getElementById("sliderWorkTime").value = 4;
+      updateWorkCalculations();
+    }
+
+    let lastTime = performance.now();
+    function loop(now) {
+      const dt = Math.min(0.05, (now - lastTime) / 1000);
+      lastTime = now;
+
+      if (activeMode === "energy") {
+        if (energyState.isPlaying) {
+          stepEnergyPhysics(dt * energyState.speedMult);
+        }
+        renderEnergyCanvas();
+      } else {
+        renderWorkCanvas(dt);
+      }
+
+      requestAnimationFrame(loop);
+    }
+
+    updateWorkCalculations();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
